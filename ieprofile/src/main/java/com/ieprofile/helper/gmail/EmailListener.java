@@ -30,7 +30,7 @@ import com.sun.mail.imap.IMAPFolder;
 /**
  * 
  * @author cpappala
- *
+ * 
  */
 @Service
 public class EmailListener {
@@ -116,16 +116,20 @@ public class EmailListener {
 				supportsIdle = false;
 			}
 			for (;;) {
-				if (supportsIdle && folder instanceof IMAPFolder) {
-					IMAPFolder f = (IMAPFolder) folder;
-					f.idle();
-					System.out.println("IDLE done");
-				} else {
-					Thread.sleep(freq); // sleep for freq milliseconds
+				try {
+					if (supportsIdle && folder instanceof IMAPFolder) {
+						IMAPFolder f = (IMAPFolder) folder;
+						f.idle();
+						System.out.println("IDLE done");
+					} else {
+						Thread.sleep(freq); // sleep for freq milliseconds
 
-					// This is to force the IMAP server to send us
-					// EXISTS notifications.
-					folder.getMessageCount();
+						// This is to force the IMAP server to send us
+						// EXISTS notifications.
+						folder.getMessageCount();
+					}
+				} catch (FolderClosedException fex) {
+					throw fex;
 				}
 			}
 		} catch (Exception ex) {
@@ -191,11 +195,11 @@ public class EmailListener {
 	}
 
 	public static LinkedList<MessageBean> sendMessage(Message[] messages,
-			List<String> attachments) throws MessagingException,
-			IOException {
+			List<String> attachments) throws MessagingException, IOException {
 		LinkedList<MessageBean> listMessages = new LinkedList<MessageBean>();
 		System.out.println("Messages **** " + messages.length);
-		int length = messages.length > 10 ? messages.length - 10 : messages.length - 1;
+		int length = messages.length > 10 ? messages.length - 10
+				: messages.length - 1;
 		for (int j = messages.length - 1; j >= length; j--) {
 
 			attachments.clear();
@@ -207,7 +211,8 @@ public class EmailListener {
 						InternetAddress.toString(messages[j]
 								.getRecipients(Message.RecipientType.TO)),
 						messages[j].getSentDate(),
-						(String) messages[j].getContent(), length == 0 ? true : false, null);
+						(String) messages[j].getContent(), length == 0 ? true
+								: false, null);
 				listMessages.add(message);
 			} else if (messages[j].isMimeType("multipart/*")) {
 				Multipart mp = (Multipart) messages[j].getContent();
@@ -222,7 +227,8 @@ public class EmailListener {
 								messages[j].getSubject(),
 								messages[j].getFrom()[0].toString(), null,
 								messages[j].getSentDate(),
-								(String) part.getContent(), length == 0 ? true : false, null);
+								(String) part.getContent(), length == 0 ? true
+										: false, null);
 					} else if (part.getFileName() != null
 							|| part.getFileName() != "") {
 						if (part.getDisposition() != null
